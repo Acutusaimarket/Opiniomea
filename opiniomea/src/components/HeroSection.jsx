@@ -53,7 +53,7 @@ const IMAGES = {
 
 const HeroSection = () => {
   const [email, setEmail] = useState("");
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLogin, setIsLogin] = useState(false);
@@ -127,7 +127,7 @@ const HeroSection = () => {
         localStorage.setItem("userConsents", JSON.stringify(consents));
       }
 
-      Navigate("/profile");
+      navigate("/profile");
     } catch (err) {
       setError(err.message);
       console.error("Auth error:", err);

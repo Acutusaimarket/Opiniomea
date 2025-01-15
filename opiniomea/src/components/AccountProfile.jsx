@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { Edit2, Save, X, UserCircle } from "lucide-react";
 import "./AccountProfile.css";
-import jsl from "/Users/myfantacyworld/Desktop/github/f/algo/test/high/m/frontend /opiniomea/src/assets/jsj.jpg";
-// /Users/myfantacyworld/Desktop/github/f/algo/test/high/m/frontend /opiniomea/backend
+import jsl from "../assets/ideal.jpg";
+
 const AccountProfile = () => {
+  const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     basic: null,
     full: null,
   });
+  const [editedProfile, setEditedProfile] = useState({});
   const [uiState, setUiState] = useState({
     isLoading: true,
     error: null,
+    isSaving: false,
   });
 
   const email = localStorage.getItem("email");
@@ -20,9 +24,7 @@ const AccountProfile = () => {
     try {
       const endpoint =
         type === "basic"
-          ? `https://api.qmapi.com/api/profiles?email=${encodeURIComponent(
-              email
-            )}`
+          ? `https://api.qmapi.com/api/profiles?email=${encodeURIComponent(email)}`
           : "https://api.qmapi.com/api/profiles/";
 
       const response = await fetch(endpoint, {
@@ -41,6 +43,7 @@ const AccountProfile = () => {
         ...prev,
         [type]: data,
       }));
+      setEditedProfile(data);
     } catch (error) {
       console.error(`Error fetching ${type} profile:`, error);
       setUiState((prev) => ({
@@ -51,6 +54,46 @@ const AccountProfile = () => {
       setUiState((prev) => ({ ...prev, isLoading: false }));
     }
   };
+
+  const handleInputChange = (field, value) => {
+    setEditedProfile((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSave = async () => {
+    setUiState((prev) => ({ ...prev, isSaving: true, error: null }));
+
+    try {
+      const response = await fetch(`https://api.qmapi.com/api/p/profiles?email=${encodeURIComponent(email)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editedProfile),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+
+      setProfileData((prev) => ({
+        ...prev,
+        basic: editedProfile,
+      }));
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setUiState((prev) => ({
+        ...prev,
+        error: 'Failed to update profile. Please try again.',
+      }));
+    } finally {
+      setUiState((prev) => ({ ...prev, isSaving: false }));
+    }
+  };
+
   useEffect(() => {
     fetchProfile("basic");
   }, []);
@@ -68,84 +111,103 @@ const AccountProfile = () => {
     return <div className="error-state">⚠️ {uiState.error}</div>;
   }
 
-  const basicProfile = profileData.basic || {};
+  const profile = isEditing ? editedProfile : (profileData.basic || {});
+
+  const renderField = (label, field) => {
+    return (
+      <div className="detail-item">
+        <div className="detail-label">{label}</div>
+        <div className="detail-value">
+          {isEditing ? (
+            <input
+              type="text"
+              value={editedProfile[field] || ''}
+              onChange={(e) => handleInputChange(field, e.target.value)}
+              className="form-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          ) : (
+            profile[field]
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="account-profile">
       <div className="profile-header">
         <div className="profile-header-content">
-          <img src={jsl} alt="Profile" className="profile-logo" />
+          {jsl ? (
+            <img src={jsl} alt="Profile" className="profile-logo" />
+          ) : (
+            <UserCircle size={64} className="text-gray-400" />
+          )}
           <div>
             <div className="profile-name">
-              {basicProfile.firstName || "Unknown"}{" "}
-              {basicProfile.lastName || ""}
+              {profile.firstName || "Unknown"} {profile.lastName || ""}
             </div>
-            <div className="profile-email">{basicProfile.email || email}</div>
+            <div className="profile-email">{profile.email || email}</div>
           </div>
+        </div>
+        <div className="flex gap-4">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={uiState.isSaving}
+                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
+              >
+                <Save size={16} />
+                {uiState.isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                onClick={() => setIsEditing(false)}
+                disabled={uiState.isSaving}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
+              >
+                <X size={16} />
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              <Edit2 size={16} />
+              Edit Profile
+            </button>
+          )}
         </div>
       </div>
 
       <div className="profile-content">
         <div className="profile-sections">
-          {/* Personal Information Section */}
           <div className="profile-section">
             <div className="section-title">Personal Information</div>
             <div className="profile-details">
-              <div className="detail-item">
-                <div className="detail-label">First Name</div>
-                <div className="detail-value">{basicProfile.firstName}</div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Last Name</div>
-                <div className="detail-value">{basicProfile.lastName}</div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Date of Birth</div>
-                <div className="detail-value">{basicProfile.dateOfBirth}</div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Gender</div>
-                <div className="detail-value">{basicProfile.gender}</div>
-              </div>
+              {renderField("First Name", "firstName")}
+              {renderField("Last Name", "lastName")}
+              {renderField("Date of Birth", "dateOfBirth")}
+              {renderField("Gender", "gender")}
             </div>
           </div>
 
-          {/* Contact Information Section */}
           <div className="profile-section">
             <div className="section-title">Contact Information</div>
             <div className="profile-details">
-              <div className="detail-item">
-                <div className="detail-label">Phone Number</div>
-                <div className="detail-value">{basicProfile.phoneNumber}</div>
-              </div>
-              
+              {renderField("Phone Number", "phoneNumber")}
             </div>
           </div>
 
-          {/* Address Section */}
           <div className="profile-section">
             <div className="section-title">Address Details</div>
             <div className="profile-details">
-              <div className="detail-item">
-                <div className="detail-label">Street Address</div>
-                <div className="detail-value">{basicProfile.address}</div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">City</div>
-                <div className="detail-value">{basicProfile.city}</div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">State</div>
-                <div className="detail-value">{basicProfile.state}</div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Country</div>
-                <div className="detail-value">{basicProfile.country}</div>
-              </div>
-              <div className="detail-item">
-                <div className="detail-label">Postal Code</div>
-                <div className="detail-value">{basicProfile.postalCode}</div>
-              </div>
+              {renderField("Street Address", "address")}
+              {renderField("City", "city")}
+              {renderField("State", "state")}
+              {renderField("Country", "country")}
+              {renderField("Postal Code", "postalCode")}
             </div>
           </div>
         </div>

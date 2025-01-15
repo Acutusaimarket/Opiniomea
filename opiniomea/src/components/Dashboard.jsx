@@ -2,17 +2,11 @@ import React, { useEffect, useState } from "react";
 import { Clock, Award, Target, Star, Trophy, Menu, X } from "lucide-react";
 import axios from "axios";
 import opineomi from "../assets/opineomi.png";
-import AccountProfileForm from "./AccountProfileForm";
 import AccountProfile from "./AccountProfile";
-import "./Dashboard.css"
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [surveys, setSurveys] = useState([]);
-  const [completedSurveys, setCompletedSurveys] = useState({});
-  const [showConsentPopup, setShowConsentPopup] = useState(false);
-  const [selectedTile, setSelectedTile] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,35 +25,35 @@ const Dashboard = () => {
       min: 0,
       max: 5,
       points: 50,
-      icon: <Clock className="w-6 h-6" />,
+      icon: <Clock className="w-6 h-6 text-white" />,
       title: "Quick Survey",
     },
     {
       min: 6,
       max: 10,
       points: 70,
-      icon: <Award className="w-6 h-6" />,
+      icon: <Award className="w-6 h-6 text-white" />,
       title: "Short Survey",
     },
     {
       min: 11,
       max: 15,
       points: 100,
-      icon: <Target className="w-6 h-6" />,
+      icon: <Target className="w-6 h-6 text-white" />,
       title: "Standard Survey",
     },
     {
       min: 16,
       max: 20,
       points: 125,
-      icon: <Star className="w-6 h-6" />,
+      icon: <Star className="w-6 h-6 text-white" />,
       title: "Extended Survey",
     },
     {
       min: 21,
       max: 25,
       points: 150,
-      icon: <Trophy className="w-6 h-6" />,
+      icon: <Trophy className="w-6 h-6 text-white" />,
       title: "Premium Survey",
     },
   ];
@@ -74,8 +68,6 @@ const Dashboard = () => {
         if (response.ok) {
           const profileData = await response.json();
           setFormData((prev) => ({ ...prev, ...profileData }));
-        } else {
-          console.error("Failed to fetch profile data");
         }
       } catch (error) {
         console.error("Error fetching profile data:", error);
@@ -85,260 +77,169 @@ const Dashboard = () => {
     fetchProfileData();
   }, []);
 
-  const generateRandomId = () => {
-    return Math.random().toString(36).substr(2, 9);
-  };
-
-  const handleTileClick = (tile) => {
-    setSelectedTile(tile);
-    setShowConsentPopup(true);
-  };
-
-  const handleTileConsent = async (accepted) => {
-    if (accepted && selectedTile) {
-      try {
-        const PID = generateRandomId();
-        const email = localStorage.getItem("email");
-
-        await axios.post(`https://api.qmapi.com/api/status/${formData.id}`, {
-          PID,
-          points: selectedTile.points,
-          surveyType: selectedTile.title,
-          timeRange: `${selectedTile.min}-${selectedTile.max}`,
-        });
-
-        window.location.href = `https://api.qmapi.com/opiniomea/entry?PNID=${PID}&SupplyID=6000&loi_min=${selectedTile.min}&loi_max=${selectedTile.max}&points=${selectedTile.points}`;
-        
-        console.log(`Successfully recorded points for ${selectedTile.title}`);
-      } catch (error) {
-        console.error("Error recording survey completion:", error);
-      }
-    }
-    setShowConsentPopup(false);
-    setSelectedTile(null);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleTileClick = async (tile) => {
     try {
+      const PID = Math.random().toString(36).substr(2, 9);
       const email = localStorage.getItem("email");
-      const response = await fetch(
-        `https://api.qmapi.com/api/p/profiles?email=${encodeURIComponent(email)}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-      if (response.ok) {
-        alert("Profile updated successfully!");
-      } else {
-        alert("Failed to update profile");
-      }
+
+      await axios.post(`https://api.qmapi.com/api/status/${formData.id}`, {
+        PID,
+        points: tile.points,
+        surveyType: tile.title,
+        timeRange: `${tile.min}-${tile.max}`,
+      });
+
+      window.location.href = `https://api.qmapi.com/opiniomea/entry?PNID=${PID}&SupplyID=6000&loi_min=${tile.min}&loi_max=${tile.max}&points=${tile.points}`;
     } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("An error occurred. Please try again later.");
-    }
-  };
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const handleContentClick = () => {
-    if (isSidebarOpen && window.innerWidth <= 768) {
-      setIsSidebarOpen(false);
+      console.error("Error recording survey completion:", error);
     }
   };
 
   const renderPointsTiles = () => (
-    <div className="points-tiles-container">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-4 md:p-6">
       {pointsMapping.map((tile, index) => (
         <div
           key={index}
-          className="points-tile"
+          className="group relative overflow-hidden bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] cursor-pointer"
           onClick={() => handleTileClick(tile)}
         >
-          <div className="points-tile-icon">{tile.icon}</div>
-          <div className="points-tile-content">
-            <h3 className="points-tile-title">{tile.title}</h3>
-            <p className="points-tile-points">{tile.points} pts</p>
-            <p className="points-tile-time">
-              {tile.min}-{tile.max} mins
-            </p>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-600 opacity-90 group-hover:opacity-100 transition-opacity" />
+          <div className="relative p-6 md:p-8">
+            <div className="flex flex-col space-y-4">
+              <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm w-fit">
+                {tile.icon}
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg md:text-xl font-bold text-white tracking-tight">
+                  {tile.title}
+                </h3>
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-3xl md:text-4xl font-extrabold text-white">
+                    {tile.points}
+                  </span>
+                  <span className="text-lg text-white/90">pts</span>
+                </div>
+                <p className="text-sm text-white/80 font-medium">
+                  {tile.min}-{tile.max} mins
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       ))}
     </div>
   );
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "account":
-        return (
-          <div className="account-section">
-            <AccountProfile />
-          </div>
-        );
-
-      case "leaderboard":
-        return (
-          <div className="form-container">
-            <h2 className="form-title">Profile Information</h2>
-            <form onSubmit={handleSubmit} className="profile-form">
-              <div className="form-grid">
-                {Object.keys(formData)
-                  .filter(
-                    (field) =>
-                      field !== "password" &&
-                      field !== "createdAt" &&
-                      field !== "updatedAt" &&
-                      field !== "id"
-                  )
-                  .map((field) => (
-                    <div className="form-group" key={field}>
-                      <label htmlFor={field}>
-                        {field.charAt(0).toUpperCase() + field.slice(1)}
-                      </label>
-                      <input
-                        type={
-                          field === "email"
-                            ? "email"
-                            : field === "dateOfBirth"
-                            ? "date"
-                            : "text"
-                        }
-                        id={field}
-                        name={field}
-                        value={formData[field]}
-                        onChange={handleChange}
-                        disabled={field === "email"}
-                        className="form-input"
-                        placeholder={`Enter your ${field.toLowerCase()}`}
-                      />
-                    </div>
-                  ))}
-              </div>
-              <div className="form-actions">
-                <button type="submit" className="save-button">
-                  Save Changes
-                </button>
-                <button type="button" className="cancel-button">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        );
-
-      default:
-        return <div className="survey-section">{renderPointsTiles()}</div>;
-    }
-  };
-
   return (
-    <div className="dashboard-container">
-      <button className="mobile-menu-btn" onClick={toggleSidebar}>
-        {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Mobile Menu Button */}
+      <button 
+        className="lg:hidden fixed top-4 right-4 z-50 p-2 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+      >
+        {isSidebarOpen ? (
+          <X className="w-5 h-5 text-gray-700" />
+        ) : (
+          <Menu className="w-5 h-5 text-gray-700" />
+        )}
       </button>
 
-      <aside className={`sidebar ${isSidebarOpen ? "active" : ""}`}>
-        <div className="logo">
-          <img src={opineomi} alt="Opineomi Logo" className="logo-image" />
+      {/* Sidebar */}
+      <aside
+  className={`fixed top-0 left-0 h-full w-80 bg-white border-r border-gray-100 shadow-lg transform transition-all duration-300 ease-in-out z-40
+    ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+>
+  {/* Logo Container */}
+  <div className="flex items-center h-16 px-6 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50">
+    <img src={opineomi} alt="Logo" className="h-8 w-auto object-contain" />
+  </div>
+
+  {/* Navigation Container */}
+  <div className="flex flex-col h-[calc(100%-4rem)] overflow-y-auto">
+    {/* Main Navigation */}
+    <nav className="flex-1 px-3 py-4">
+      {[
+        { label: "Dashboard", icon: "📊", id: "dashboard" },
+        { label: "Account", icon: "👤", id: "account" },
+      ].map((tab) => (
+        <button
+          key={tab.id}
+          className={`w-full flex items-center px-4 py-3 mb-1 rounded-lg font-medium transition-all duration-200
+            ${
+              activeTab === tab.id
+                ? "bg-emerald-100/80 text-emerald-700 shadow-sm"
+                : "text-gray-700 hover:bg-gray-100/60"
+            }
+            group relative overflow-hidden`}
+          onClick={() => {
+            setActiveTab(tab.id);
+            if (window.innerWidth <= 1024) {
+              setIsSidebarOpen(false);
+            }
+          }}
+        >
+          {/* Active Indicator */}
+          {activeTab === tab.id && (
+            <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
+          )}
+          
+          {/* Icon Container */}
+          <span className={`flex items-center justify-center w-8 h-8 mr-3 rounded-lg 
+            ${activeTab === tab.id ? 'bg-emerald-200/50' : 'bg-gray-100/50 group-hover:bg-gray-200/50'}
+            transition-colors duration-200`}>
+            {tab.icon}
+          </span>
+          
+          {/* Label */}
+          <span className="text-sm tracking-wide">{tab.label}</span>
+        </button>
+      ))}
+    </nav>
+
+    {/* Footer Section - Optional */}
+    <div className="mt-auto p-4 border-t border-gray-100 bg-gray-50/50">
+      <div className="flex items-center space-x-3 px-3 py-2 rounded-lg">
+        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+          👋
         </div>
-        <nav className="nav-menu">
-          {[
-            { label: "Dashboard", icon: "📋", id: "dashboard" },
-            { label: "Profile", icon: "👥", id: "leaderboard" },
-            { label: "Account", icon: "👤", id: "account" },
-          ].map((tab) => (
-            <a
-              key={tab.id}
-              href="#"
-              className={`nav-item ${activeTab === tab.id ? "active" : ""}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveTab(tab.id);
-                if (window.innerWidth <= 768) {
-                  setIsSidebarOpen(false);
-                }
-              }}
-            >
-              <span className="icon">{tab.icon}</span>
-              <span>{tab.label}</span>
-            </a>
-          ))}
-        </nav>
-      </aside>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-700">Welcome Back</p>
+          <p className="text-xs text-gray-500">Select a survey to begin</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
 
-      {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar} />}
-
-      <main className="main-content" onClick={handleContentClick}>
-        {renderContent()}
+      {/* Main Content */}
+      <main
+        className={`lg:ml-72 min-h-screen transition-all duration-300 ${
+          isSidebarOpen ? "blur-sm" : ""
+        }`}
+      >
+        <div className="p-4 md:p-8">
+          <header className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
+              {activeTab === "dashboard" ? "Available Surveys" : "Account Settings"}
+            </h1>
+            <p className="mt-2 text-gray-600">
+              {activeTab === "dashboard"
+                ? "Select a survey to start earning points"
+                : "Manage your profile and preferences"}
+            </p>
+          </header>
+          
+          {activeTab === "dashboard" ? renderPointsTiles() : <AccountProfile />}
+        </div>
       </main>
 
-      {showConsentPopup && selectedTile && (
-        <div className="consent-popup">
-          <div className="consent-popup-content">
-            <h3>Hi! We'd like your consent to collect your information!</h3>
-            <p>
-              You are about to start: <strong>{selectedTile.title}</strong>
-            </p>
-            <p>
-              Points to earn: <strong>{selectedTile.points}</strong>
-            </p>
-            <p>This may include:</p>
-
-            <div className="consent-info-grid">
-              <div>
-                <div className="consent-item">Cookie IDs</div>
-                <div className="consent-item">Lifestyle Info</div>
-                <div className="consent-item">Device Identifiers</div>
-              </div>
-              <div>
-                <div className="consent-item">Demographics</div>
-                <div className="consent-item">Interests</div>
-                <div className="consent-item">Sensitive Info</div>
-              </div>
-            </div>
-
-            <div className="consent-checkbox">
-              <input type="checkbox" id="consent-checkbox" />
-              <label htmlFor="consent-checkbox">
-                I have reviewed and agree to the{" "}
-                <a href="#">General Usage Terms</a>,{" "}
-                <a href="#">Privacy Policy</a>, and{" "}
-                <a href="#">Cookie Policy</a>
-              </label>
-            </div>
-
-            <div className="consent-actions">
-              <button
-                onClick={() => handleTileConsent(true)}
-                className="accept-button"
-              >
-                I Agree
-              </button>
-              <button
-                onClick={() => handleTileConsent(false)}
-                className="decline-button"
-              >
-                Disagree
-              </button>
-            </div>
-
-            <p className="consent-footer">
-              By clicking continue, you accept our terms.
-            </p>
-          </div>
-        </div>
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm lg:hidden z-30"
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
     </div>
   );
