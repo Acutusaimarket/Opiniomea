@@ -1,4 +1,4 @@
-# Opinomea
+# Opiniomea
 
 Opinomea is a cutting-edge platform designed to streamline survey management and data collection for market research. It provides seamless API integrations, efficient survey traffic management, and advanced features to help businesses gain actionable insights from their audience.
 
