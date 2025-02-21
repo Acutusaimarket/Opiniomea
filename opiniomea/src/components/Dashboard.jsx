@@ -89,7 +89,7 @@ const Dashboard = () => {
         timeRange: `${tile.min}-${tile.max}`,
       });
 
-      window.location.href = `https://api.qmapi.com/opiniomea/entry?PNID=${PID}&SupplyID=6000&loi_min=${tile.min}&loi_max=${tile.max}&points=${tile.points}`;
+      window.location.href = `https://api.qmapi.com/opiniomea/entry?PNID=${PID}&SupplyID=6000&loi_min=${tile.min}&loi_max=${tile.max}&points=${tile.points}&country=${"eng_us"}`;
     } catch (error) {
       console.error("Error recording survey completion:", error);
     }
